@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --surface-2: #161616;
+  --border: #1e1e1e;
+  --border-hover: #2a2a2a;
+  --text: #e8e4de;
+  --text-muted: #8a8580;
+  --text-dim: #5a5550;
+  --accent: #c8ff00;
+  --accent-hover: #d4ff33;
+  --accent-dim: #c8ff0015;
+  --warm: #ff6b35;
+  --warm-dim: #ff6b3515;
+  --blue: #4a9eff;
+  --blue-dim: #4a9eff15;
+  --green: #34d399;
+  --green-dim: #34d39915;
+  --danger: #ef4444;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+@layer components {
+  .form-input {
+    @apply w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2
+      text-sm text-[var(--text)] placeholder:text-[var(--text-dim)]
+      focus:outline-none focus:border-[var(--border-hover)]
+      transition-colors duration-200;
+  }
+  .form-input:focus {
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
