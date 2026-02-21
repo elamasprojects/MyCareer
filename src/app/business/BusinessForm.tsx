@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Save,
@@ -12,19 +12,43 @@ import {
   UsersRound,
   Rocket,
   Tag,
+  Loader2,
 } from "lucide-react";
-import { mockBusinessContext } from "@/lib/mock-data";
 import { BusinessContext } from "@/lib/types";
+import { updateBusinessContext } from "@/lib/mutations";
 
-export default function BusinessForm() {
-  const [form, setForm] = useState<BusinessContext>({
-    ...mockBusinessContext,
-  });
+interface BusinessFormProps {
+  initialData: BusinessContext | null;
+}
+
+const defaultForm = {
+  business_name: "",
+  description: "",
+  current_phase: "",
+  current_needs: [] as string[],
+  revenue_monthly: 0,
+  team_size: 1,
+};
+
+export default function BusinessForm({ initialData }: BusinessFormProps) {
+  const [form, setForm] = useState(
+    initialData
+      ? {
+          business_name: initialData.business_name,
+          description: initialData.description ?? "",
+          current_phase: initialData.current_phase ?? "",
+          current_needs: initialData.current_needs ?? [],
+          revenue_monthly: initialData.revenue_monthly,
+          team_size: initialData.team_size,
+        }
+      : defaultForm
+  );
   const [tagInput, setTagInput] = useState("");
   const [saved, setSaved] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const handleChange = useCallback(
-    (field: keyof BusinessContext, value: string | number | string[]) => {
+    (field: string, value: string | number | string[]) => {
       setForm((prev) => ({ ...prev, [field]: value }));
       setSaved(false);
     },
@@ -50,8 +74,18 @@ export default function BusinessForm() {
   );
 
   const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    startTransition(async () => {
+      await updateBusinessContext({
+        business_name: form.business_name,
+        description: form.description || undefined,
+        current_phase: form.current_phase || undefined,
+        current_needs: form.current_needs,
+        revenue_monthly: form.revenue_monthly,
+        team_size: form.team_size,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    });
   };
 
   return (
@@ -67,7 +101,7 @@ export default function BusinessForm() {
           />
         </FormField>
 
-        <FormField label="Descripción">
+        <FormField label="Descripcion">
           <textarea
             value={form.description}
             onChange={(e) => handleChange("description", e.target.value)}
@@ -115,7 +149,9 @@ export default function BusinessForm() {
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && (e.preventDefault(), addTag())
+                }
                 placeholder="Agregar necesidad..."
                 className="form-input flex-1"
               />
@@ -143,7 +179,7 @@ export default function BusinessForm() {
             />
           </FormField>
 
-          <FormField label="Tamaño del equipo" icon={UsersRound}>
+          <FormField label="Tamano del equipo" icon={UsersRound}>
             <input
               type="number"
               value={form.team_size}
@@ -160,9 +196,11 @@ export default function BusinessForm() {
         <div className="pt-2">
           <button
             onClick={handleSave}
+            disabled={isPending}
             className={`
               inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium
               transition-all duration-200 ease-out
+              disabled:opacity-60 disabled:cursor-not-allowed
               ${
                 saved
                   ? "bg-[var(--green-dim)] border border-[var(--green)]/20 text-[var(--green)]"
@@ -170,7 +208,12 @@ export default function BusinessForm() {
               }
             `}
           >
-            {saved ? (
+            {isPending ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Guardando...
+              </>
+            ) : saved ? (
               <>
                 <Check size={16} />
                 Guardado
@@ -192,7 +235,7 @@ export default function BusinessForm() {
             Vista IA
           </span>
           <p className="text-sm text-[var(--text-muted)] leading-relaxed mb-4">
-            Así es como la IA interpreta tu contexto para generar contenido
+            Asi es como la IA interpreta tu contexto para generar contenido
             personalizado:
           </p>
           <div className="space-y-3 text-sm">
@@ -242,7 +285,7 @@ export default function BusinessForm() {
           {form.description && (
             <div className="mt-4 pt-4 border-t border-[var(--border)]">
               <span className="text-[11px] font-mono text-[var(--text-dim)] uppercase">
-                Descripción
+                Descripcion
               </span>
               <p className="text-[13px] text-[var(--text-muted)] mt-1 leading-relaxed line-clamp-4">
                 {form.description}

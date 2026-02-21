@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,8 +14,11 @@ import {
   Menu,
   X,
   Zap,
+  LogOut,
 } from "lucide-react";
-import { mockProgress } from "@/lib/mock-data";
+import { signOut } from "@/lib/auth-actions";
+import { createClient } from "@/lib/supabase/client";
+import { computeLevelXP, type ProgressWithLevels } from "@/lib/types";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: Home },
@@ -25,22 +28,49 @@ const navItems = [
     label: "Calendario",
     icon: Calendar,
     disabled: true,
-    tooltip: "Próximamente",
+    tooltip: "Proximamente",
   },
   { href: "/business", label: "Mi Negocio", icon: Building2 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
+const defaultProgress: ProgressWithLevels = {
+  id: "",
+  user_id: "",
+  total_xp: 0,
+  level: 1,
+  current_streak: 0,
+  longest_streak: 0,
+  classes_completed: 0,
+  last_study_date: null,
+  xp_for_current_level: 0,
+  xp_for_next_level: 100,
+};
+
 export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [progress, setProgress] = useState<ProgressWithLevels>(defaultProgress);
 
-  const xpInLevel =
-    mockProgress.total_xp - mockProgress.xp_for_current_level;
-  const xpNeeded =
-    mockProgress.xp_for_next_level - mockProgress.xp_for_current_level;
-  const xpPercent = Math.round((xpInLevel / xpNeeded) * 100);
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase
+        .from("progress")
+        .select("*")
+        .eq("user_id", user.id)
+        .single()
+        .then(({ data }) => {
+          if (data) setProgress(computeLevelXP(data));
+        });
+    });
+  }, [pathname]); // refresh when navigating
+
+  const xpInLevel = progress.total_xp - progress.xp_for_current_level;
+  const xpNeeded = progress.xp_for_next_level - progress.xp_for_current_level;
+  const xpPercent = xpNeeded > 0 ? Math.round((xpInLevel / xpNeeded) * 100) : 0;
 
   return (
     <>
@@ -147,13 +177,26 @@ export default function Sidebar() {
           })}
         </nav>
 
+        {/* Logout */}
+        <div className="px-2 pb-1">
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-all duration-200 w-full"
+            >
+              <LogOut size={18} />
+              {!collapsed && <span>Salir</span>}
+            </button>
+          </form>
+        </div>
+
         {/* Bottom gamification section */}
         <div className="border-t border-[var(--border)] p-3 space-y-2.5">
           {collapsed ? (
             <div className="flex flex-col items-center gap-2">
               <Flame size={16} className="text-[var(--warm)]" />
               <span className="text-[10px] font-mono text-[var(--text-dim)]">
-                {mockProgress.current_streak}
+                {progress.current_streak}
               </span>
             </div>
           ) : (
@@ -163,24 +206,24 @@ export default function Sidebar() {
                   <Flame
                     size={14}
                     className={`text-[var(--warm)] ${
-                      mockProgress.current_streak > 5 ? "animate-pulse" : ""
+                      progress.current_streak > 5 ? "animate-pulse" : ""
                     }`}
                   />
                   <span className="text-xs font-mono text-[var(--text-muted)]">
-                    {mockProgress.current_streak} días
+                    {progress.current_streak} dias
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Zap size={12} className="text-[var(--accent)]" />
                   <span className="text-xs font-mono text-[var(--text-dim)]">
-                    {mockProgress.total_xp} XP
+                    {progress.total_xp} XP
                   </span>
                 </div>
               </div>
               <div className="px-1">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[10px] font-mono text-[var(--text-dim)]">
-                    Nivel {mockProgress.level}
+                    Nivel {progress.level}
                   </span>
                   <span className="text-[10px] font-mono text-[var(--text-dim)]">
                     {xpInLevel}/{xpNeeded} XP
