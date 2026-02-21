@@ -4,6 +4,7 @@ import {
   Workflow,
   BarChart3,
   Megaphone,
+  BookOpen,
   LucideIcon,
 } from "lucide-react";
 import AppShell from "@/components/layout/AppShell";
@@ -12,13 +13,14 @@ import Badge from "@/components/ui/Badge";
 import ProgressBar from "@/components/ui/ProgressBar";
 import SubjectSidebar from "@/components/subject/SubjectSidebar";
 import SubjectModules from "./SubjectModules";
-import { getSubjectById, getModulesForSubject } from "@/lib/mock-data";
+import { getSubjectById, getModulesWithClasses } from "@/lib/queries";
 
 const iconMap: Record<string, LucideIcon> = {
   Users,
   Workflow,
   BarChart3,
   Megaphone,
+  BookOpen,
 };
 
 const statusConfig: Record<
@@ -31,11 +33,18 @@ const statusConfig: Record<
   paused: { label: "Pausada", variant: "warm" },
 };
 
-export default function SubjectPage({ params }: { params: { id: string } }) {
-  const subject = getSubjectById(params.id);
+export default async function SubjectPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const [subject, modules] = await Promise.all([
+    getSubjectById(params.id),
+    getModulesWithClasses(params.id),
+  ]);
+
   if (!subject) return notFound();
 
-  const modules = getModulesForSubject(params.id);
   const Icon = iconMap[subject.icon] || BarChart3;
   const status = statusConfig[subject.status];
 
@@ -101,7 +110,7 @@ export default function SubjectPage({ params }: { params: { id: string } }) {
           {/* Modules */}
           <div>
             <span className="text-[11px] font-mono uppercase tracking-widest text-[var(--accent)] mb-4 block">
-              Módulos
+              Modulos
             </span>
             <SubjectModules modules={modules} subjectId={params.id} />
           </div>

@@ -7,21 +7,28 @@ import {
   getSubjectById,
   getClassById,
   getAdjacentClasses,
-} from "@/lib/mock-data";
+  getModulesWithClasses,
+} from "@/lib/queries";
 
-export default function ClassPage({
+export default async function ClassPage({
   params,
 }: {
   params: { id: string; classId: string };
 }) {
-  const subject = getSubjectById(params.id);
-  if (!subject) return notFound();
+  const [subject, classData, adjacent, modules] = await Promise.all([
+    getSubjectById(params.id),
+    getClassById(params.classId),
+    getAdjacentClasses(params.id, params.classId),
+    getModulesWithClasses(params.id),
+  ]);
 
-  const result = getClassById(params.id, params.classId);
-  if (!result) return notFound();
+  if (!subject || !classData) return notFound();
 
-  const { module, classData } = result;
-  const { prev, next } = getAdjacentClasses(params.id, params.classId);
+  // Find the module this class belongs to
+  const currentModule = modules.find((m) =>
+    m.classes.some((c) => c.id === params.classId)
+  );
+  if (!currentModule) return notFound();
 
   return (
     <AppShell>
@@ -29,7 +36,7 @@ export default function ClassPage({
         items={[
           { label: "Materias", href: "/subjects" },
           { label: subject.title, href: `/subjects/${subject.id}` },
-          { label: module.title },
+          { label: currentModule.title },
           { label: classData.title },
         ]}
       />
@@ -39,19 +46,19 @@ export default function ClassPage({
       </h1>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Main — 65% */}
+        {/* Main */}
         <div className="flex-1 min-w-0 lg:max-w-[65%]">
           <ClassContent classData={classData} />
         </div>
 
-        {/* Sidebar — 35% */}
+        {/* Sidebar */}
         <div className="w-full lg:w-[35%] shrink-0">
           <ClassSidebar
             classData={classData}
-            module={module}
+            module={currentModule}
             subjectId={params.id}
-            prevClass={prev}
-            nextClass={next}
+            prevClass={adjacent.prev}
+            nextClass={adjacent.next}
           />
         </div>
       </div>

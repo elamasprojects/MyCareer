@@ -13,7 +13,7 @@ import {
   CheckCircle2,
   Circle,
 } from "lucide-react";
-import { Class, Module, Resource } from "@/lib/types";
+import { Class, ClassRow, Module, Resource } from "@/lib/types";
 
 const resourceIcons: Record<Resource["type"], typeof FileText> = {
   pdf: FileText,
@@ -27,8 +27,8 @@ interface ClassSidebarProps {
   classData: Class;
   module: Module;
   subjectId: string;
-  prevClass: Class | null;
-  nextClass: Class | null;
+  prevClass: ClassRow | null;
+  nextClass: ClassRow | null;
 }
 
 export default function ClassSidebar({
@@ -57,7 +57,7 @@ export default function ClassSidebar({
               return (
                 <a
                   key={resource.id}
-                  href={resource.url}
+                  href={resource.url ?? "#"}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2.5 py-2 px-2 -mx-2 rounded-lg hover:bg-[var(--surface-2)] transition-colors duration-200 group"

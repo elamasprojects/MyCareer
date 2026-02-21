@@ -3,10 +3,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { User, Clock, Sun, Moon, Globe, Save, Check } from "lucide-react";
-import {
-  mockUserProfile,
-  mockUserSettings,
-} from "@/lib/mock-data";
 
 const timezones = [
   "America/Argentina/Buenos_Aires",
@@ -21,9 +17,25 @@ const timezones = [
   "Europe/Madrid",
 ];
 
-export default function SettingsContent() {
-  const [profile, setProfile] = useState({ ...mockUserProfile });
-  const [settings, setSettings] = useState({ ...mockUserSettings });
+interface SettingsContentProps {
+  userEmail: string;
+  userName: string;
+}
+
+export default function SettingsContent({
+  userEmail,
+  userName,
+}: SettingsContentProps) {
+  const [profile, setProfile] = useState({
+    name: userName,
+    email: userEmail,
+    timezone: "America/Argentina/Buenos_Aires",
+  });
+  const [settings, setSettings] = useState({
+    study_hours_per_day: 2,
+    study_days_per_week: 5,
+    theme: "dark" as "dark" | "light",
+  });
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
@@ -38,7 +50,7 @@ export default function SettingsContent() {
         <div className="flex items-start gap-5 mb-5">
           <div className="w-14 h-14 rounded-full bg-[var(--surface-2)] border border-[var(--border)] flex items-center justify-center shrink-0">
             <span className="text-xl font-serif text-[var(--accent)]">
-              {profile.name.charAt(0)}
+              {profile.name.charAt(0).toUpperCase()}
             </span>
           </div>
           <div className="flex-1 space-y-3">
@@ -62,10 +74,8 @@ export default function SettingsContent() {
               <input
                 type="email"
                 value={profile.email}
-                onChange={(e) =>
-                  setProfile((p) => ({ ...p, email: e.target.value }))
-                }
-                className="form-input w-full"
+                disabled
+                className="form-input w-full opacity-50 cursor-not-allowed"
               />
             </div>
           </div>
@@ -77,7 +87,7 @@ export default function SettingsContent() {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-[12px] font-mono text-[var(--text-muted)] uppercase tracking-wider">
-              Horas por día
+              Horas por dia
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -101,7 +111,7 @@ export default function SettingsContent() {
           </div>
           <div className="space-y-1.5">
             <label className="text-[12px] font-mono text-[var(--text-muted)] uppercase tracking-wider">
-              Días por semana
+              Dias por semana
             </label>
             <div className="flex gap-1.5">
               {[1, 2, 3, 4, 5, 6, 7].map((day) => (
@@ -135,7 +145,11 @@ export default function SettingsContent() {
       </SettingsSection>
 
       {/* Theme */}
-      <SettingsSection title="Tema" icon={settings.theme === "dark" ? Moon : Sun} index={2}>
+      <SettingsSection
+        title="Tema"
+        icon={settings.theme === "dark" ? Moon : Sun}
+        index={2}
+      >
         <div className="flex gap-3">
           {(["dark", "light"] as const).map((theme) => (
             <button
@@ -186,7 +200,8 @@ export default function SettingsContent() {
         </div>
         {settings.theme === "light" && (
           <p className="text-[11px] text-[var(--warm)] font-mono mt-2">
-            El tema claro estará disponible próximamente. Por ahora solo dark mode.
+            El tema claro estara disponible proximamente. Por ahora solo dark
+            mode.
           </p>
         )}
       </SettingsSection>

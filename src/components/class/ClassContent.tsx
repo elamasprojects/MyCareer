@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Circle, Sparkles } from "lucide-react";
+import { CheckCircle2, Circle, Sparkles, Loader2 } from "lucide-react";
 import { Class } from "@/lib/types";
+import { completeClass, uncompleteClass } from "@/lib/mutations";
+import { useRouter } from "next/navigation";
 
 interface ClassContentProps {
   classData: Class;
@@ -18,9 +20,24 @@ function getYouTubeId(url: string): string | null {
 
 export default function ClassContent({ classData }: ClassContentProps) {
   const [completed, setCompleted] = useState(classData.status === "completed");
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const videoId = classData.youtube_url
     ? getYouTubeId(classData.youtube_url)
     : null;
+
+  function handleToggle() {
+    startTransition(async () => {
+      if (completed) {
+        await uncompleteClass(classData.id);
+        setCompleted(false);
+      } else {
+        await completeClass(classData.id);
+        setCompleted(true);
+      }
+      router.refresh();
+    });
+  }
 
   return (
     <motion.div
@@ -64,16 +81,18 @@ export default function ClassContent({ classData }: ClassContentProps) {
         </div>
         <p className="text-sm text-[var(--text-muted)] leading-relaxed">
           {classData.apply_to_business ||
-            "Este contenido se generará automáticamente con IA basado en tu contexto de negocio."}
+            "Este contenido se generara automaticamente con IA basado en tu contexto de negocio."}
         </p>
       </div>
 
       {/* Complete button */}
       <button
-        onClick={() => setCompleted(!completed)}
+        onClick={handleToggle}
+        disabled={isPending}
         className={`
           w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-medium
           transition-all duration-200 ease-out border
+          disabled:opacity-60 disabled:cursor-not-allowed
           ${
             completed
               ? "bg-[var(--green-dim)] border-[var(--green)]/20 text-[var(--green)]"
@@ -81,7 +100,12 @@ export default function ClassContent({ classData }: ClassContentProps) {
           }
         `}
       >
-        {completed ? (
+        {isPending ? (
+          <>
+            <Loader2 size={16} className="animate-spin" />
+            Actualizando...
+          </>
+        ) : completed ? (
           <>
             <CheckCircle2 size={16} />
             Completada

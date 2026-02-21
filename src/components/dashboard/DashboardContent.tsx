@@ -5,27 +5,44 @@ import SubjectCard from "./SubjectCard";
 import WelcomeBanner from "./WelcomeBanner";
 import ProgressBar from "@/components/ui/ProgressBar";
 import ProgressRing from "@/components/ui/ProgressRing";
-import { mockSubjects, mockProgress, mockBusinessContext } from "@/lib/mock-data";
+import { Subject, BusinessContext, ProgressWithLevels } from "@/lib/types";
 
-const sortedSubjects = [...mockSubjects].sort(
-  (a, b) => b.priority_score - a.priority_score
-);
+interface DashboardContentProps {
+  subjects: Subject[];
+  progress: ProgressWithLevels | null;
+  business: BusinessContext | null;
+}
 
-export default function DashboardContent() {
-  const xpInLevel =
-    mockProgress.total_xp - mockProgress.xp_for_current_level;
-  const xpNeeded =
-    mockProgress.xp_for_next_level - mockProgress.xp_for_current_level;
+export default function DashboardContent({
+  subjects,
+  progress,
+  business,
+}: DashboardContentProps) {
+  const p = progress ?? {
+    total_xp: 0,
+    level: 1,
+    current_streak: 0,
+    classes_completed: 0,
+    xp_for_current_level: 0,
+    xp_for_next_level: 100,
+  };
+
+  const xpInLevel = p.total_xp - p.xp_for_current_level;
+  const xpNeeded = p.xp_for_next_level - p.xp_for_current_level;
+
+  const sortedSubjects = [...subjects].sort(
+    (a, b) => b.priority_score - a.priority_score
+  );
 
   return (
     <>
-      <WelcomeBanner streak={mockProgress.current_streak} />
+      <WelcomeBanner streak={p.current_streak} />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
         <StatsCard
           label="XP Total"
-          value={`${mockProgress.total_xp} XP`}
+          value={`${p.total_xp} XP`}
           icon="Zap"
           iconColor="var(--accent)"
           index={0}
@@ -38,14 +55,14 @@ export default function DashboardContent() {
                 size="sm"
               />
               <span className="text-[10px] font-mono text-[var(--text-dim)] whitespace-nowrap">
-                Nv {mockProgress.level + 1}
+                Nv {p.level + 1}
               </span>
             </div>
           }
         />
         <StatsCard
           label="Nivel"
-          value={`Nivel ${mockProgress.level}`}
+          value={`Nivel ${p.level}`}
           icon="Trophy"
           iconColor="var(--blue)"
           index={1}
@@ -59,7 +76,7 @@ export default function DashboardContent() {
                 color="var(--blue)"
               >
                 <span className="text-[9px] font-mono font-bold text-[var(--blue)]">
-                  {mockProgress.level}
+                  {p.level}
                 </span>
               </ProgressRing>
               <span className="text-[10px] font-mono text-[var(--text-dim)]">
@@ -70,12 +87,12 @@ export default function DashboardContent() {
         />
         <StatsCard
           label="Streak"
-          value={`${mockProgress.current_streak} días`}
+          value={`${p.current_streak} dias`}
           icon="Flame"
           iconColor="var(--warm)"
           index={2}
           extra={
-            mockProgress.current_streak > 5 ? (
+            p.current_streak > 5 ? (
               <span className="text-[11px] text-[var(--warm)] font-mono animate-pulse">
                 En racha
               </span>
@@ -84,7 +101,7 @@ export default function DashboardContent() {
         />
         <StatsCard
           label="Clases"
-          value={`${mockProgress.classes_completed}`}
+          value={`${p.classes_completed}`}
           icon="CheckCircle2"
           iconColor="var(--green)"
           index={3}
@@ -106,43 +123,45 @@ export default function DashboardContent() {
             Ordenadas por relevancia para tu negocio ahora
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {sortedSubjects.map((subject, i) => (
-            <SubjectCard key={subject.id} subject={subject} index={i} />
-          ))}
-        </div>
+        {sortedSubjects.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {sortedSubjects.map((subject, i) => (
+              <SubjectCard key={subject.id} subject={subject} index={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-card border border-[var(--border)] bg-[var(--surface)] p-8 text-center">
+            <p className="text-sm text-[var(--text-dim)]">
+              Aun no tienes materias. Crea tu primera materia para empezar.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Suggestion */}
-      <div className="mt-8 rounded-card border border-[var(--border)] bg-[var(--surface)] p-5">
-        <div className="flex items-start gap-3">
-          <span className="text-lg leading-none mt-0.5">📌</span>
-          <div>
-            <span className="text-[11px] font-mono uppercase tracking-widest text-[var(--text-dim)]">
-              Sugerencia
-            </span>
-            <p className="text-sm text-[var(--text-muted)] mt-1">
-              Tu negocio{" "}
-              <span className="text-[var(--text)]">
-                {mockBusinessContext.business_name}
-              </span>{" "}
-              está en fase de{" "}
-              <span className="text-[var(--accent)]">
-                {mockBusinessContext.current_phase}
+      {business && (
+        <div className="mt-8 rounded-card border border-[var(--border)] bg-[var(--surface)] p-5">
+          <div className="flex items-start gap-3">
+            <span className="text-lg leading-none mt-0.5">📌</span>
+            <div>
+              <span className="text-[11px] font-mono uppercase tracking-widest text-[var(--text-dim)]">
+                Sugerencia
               </span>
-              . Enfocate en{" "}
-              <span className="text-[var(--text)]">
-                Liderazgo y Gestión de Equipos
-              </span>{" "}
-              y{" "}
-              <span className="text-[var(--text)]">
-                Optimización de Procesos
-              </span>
-              .
-            </p>
+              <p className="text-sm text-[var(--text-muted)] mt-1">
+                Tu negocio{" "}
+                <span className="text-[var(--text)]">
+                  {business.business_name}
+                </span>{" "}
+                esta en fase de{" "}
+                <span className="text-[var(--accent)]">
+                  {business.current_phase}
+                </span>
+                . Enfocate en las materias de mayor prioridad.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
