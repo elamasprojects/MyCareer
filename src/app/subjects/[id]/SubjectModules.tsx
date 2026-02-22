@@ -1,6 +1,7 @@
 "use client";
 
 import ModuleAccordion from "@/components/subject/ModuleAccordion";
+import AddModuleForm from "@/components/subject/AddModuleForm";
 import { Module } from "@/lib/types";
 
 interface SubjectModulesProps {
@@ -27,6 +28,9 @@ export default function SubjectModules({
           defaultOpen={i === firstIncompleteIndex}
         />
       ))}
+
+      {/* Add module form */}
+      <AddModuleForm subjectId={subjectId} />
     </div>
   );
 }

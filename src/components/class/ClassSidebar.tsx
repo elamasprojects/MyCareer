@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -12,8 +14,12 @@ import {
   ChevronRight,
   CheckCircle2,
   Circle,
+  X,
+  Loader2,
 } from "lucide-react";
 import { Class, ClassRow, Module, Resource } from "@/lib/types";
+import { deleteResource } from "@/lib/mutations";
+import UploadResource from "./UploadResource";
 
 const resourceIcons: Record<Resource["type"], typeof FileText> = {
   pdf: FileText,
@@ -46,38 +52,23 @@ export default function ClassSidebar({
       className="space-y-5"
     >
       {/* Resources */}
-      {classData.resources.length > 0 && (
-        <div className="rounded-card border border-[var(--border)] bg-[var(--surface)] p-4">
-          <span className="text-[11px] font-mono uppercase tracking-widest text-[var(--text-dim)]">
-            Recursos
-          </span>
-          <div className="mt-3 space-y-1.5">
-            {classData.resources.map((resource) => {
-              const Icon = resourceIcons[resource.type] || FileQuestion;
-              return (
-                <a
-                  key={resource.id}
-                  href={resource.url ?? "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 py-2 px-2 -mx-2 rounded-lg hover:bg-[var(--surface-2)] transition-colors duration-200 group"
-                >
-                  <Icon
-                    size={14}
-                    className="text-[var(--text-dim)] group-hover:text-[var(--text-muted)] shrink-0"
-                  />
-                  <span className="text-sm text-[var(--text-muted)] group-hover:text-[var(--text)] truncate">
-                    {resource.title}
-                  </span>
-                  <span className="text-[10px] font-mono text-[var(--text-dim)] uppercase ml-auto shrink-0">
-                    {resource.type}
-                  </span>
-                </a>
-              );
-            })}
+      <div className="rounded-card border border-[var(--border)] bg-[var(--surface)] p-4">
+        <span className="text-[11px] font-mono uppercase tracking-widest text-[var(--text-dim)]">
+          Recursos
+        </span>
+        {classData.resources.length > 0 && (
+          <div className="mt-3 space-y-1">
+            {classData.resources.map((resource) => (
+              <ResourceRow key={resource.id} resource={resource} />
+            ))}
           </div>
+        )}
+
+        {/* Upload button */}
+        <div className="mt-3">
+          <UploadResource classId={classData.id} subjectId={subjectId} />
         </div>
-      )}
+      </div>
 
       {/* Navigation */}
       <div className="flex gap-2">
@@ -155,5 +146,69 @@ export default function ClassSidebar({
         </div>
       </div>
     </motion.div>
+  );
+}
+
+// Resource row with delete button
+function ResourceRow({ resource }: { resource: Resource }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [showConfirm, setShowConfirm] = useState(false);
+  const Icon = resourceIcons[resource.type] || FileQuestion;
+
+  function handleDelete() {
+    startTransition(async () => {
+      try {
+        await deleteResource(resource.id);
+        router.refresh();
+      } catch {
+        setShowConfirm(false);
+      }
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-2 py-2 px-2 -mx-2 rounded-lg hover:bg-[var(--surface-2)] transition-colors duration-200 group/res">
+      <a
+        href={resource.url ?? "#"}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2.5 flex-1 min-w-0"
+      >
+        <Icon
+          size={14}
+          className="text-[var(--text-dim)] group-hover/res:text-[var(--text-muted)] shrink-0"
+        />
+        <span className="text-sm text-[var(--text-muted)] group-hover/res:text-[var(--text)] truncate">
+          {resource.title}
+        </span>
+        <span className="text-[10px] font-mono text-[var(--text-dim)] uppercase ml-auto shrink-0">
+          {resource.type}
+        </span>
+      </a>
+
+      {/* Delete button */}
+      {!showConfirm ? (
+        <button
+          onClick={() => setShowConfirm(true)}
+          className="p-1 rounded text-[var(--text-dim)] hover:text-[var(--danger)] transition-all opacity-0 group-hover/res:opacity-100 shrink-0"
+          title="Eliminar recurso"
+        >
+          <X size={12} />
+        </button>
+      ) : (
+        <button
+          onClick={handleDelete}
+          disabled={isPending}
+          className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--danger)]/10 text-[var(--danger)] border border-[var(--danger)]/20 hover:bg-[var(--danger)]/20 transition-colors shrink-0 disabled:opacity-50"
+        >
+          {isPending ? (
+            <Loader2 size={10} className="animate-spin" />
+          ) : (
+            "Eliminar"
+          )}
+        </button>
+      )}
+    </div>
   );
 }

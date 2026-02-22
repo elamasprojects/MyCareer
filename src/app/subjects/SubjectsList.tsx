@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import SubjectCard from "@/components/dashboard/SubjectCard";
+import CreateSubjectModal from "./CreateSubjectModal";
 import { Subject } from "@/lib/types";
 
 type FilterTab = "all" | "active" | "completed" | "draft";
@@ -24,6 +26,7 @@ interface SubjectsListProps {
 
 export default function SubjectsList({ subjects }: SubjectsListProps) {
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
+  const [showCreate, setShowCreate] = useState(false);
   const sorted = [...subjects].sort(
     (a, b) => b.priority_score - a.priority_score
   );
@@ -31,33 +34,45 @@ export default function SubjectsList({ subjects }: SubjectsListProps) {
 
   return (
     <>
-      {/* Filter tabs */}
-      <div className="flex items-center gap-1 mb-6 border-b border-[var(--border)]">
-        {tabs.map((tab) => {
-          const count = filterSubjects(sorted, tab.key).length;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveFilter(tab.key)}
-              className={`
-                px-4 py-2.5 text-sm font-medium transition-all duration-200 relative
-                ${
-                  activeFilter === tab.key
-                    ? "text-[var(--text)]"
-                    : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
-                }
-              `}
-            >
-              {tab.label}
-              <span className="ml-1.5 text-[11px] font-mono text-[var(--text-dim)]">
-                {count}
-              </span>
-              {activeFilter === tab.key && (
-                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--accent)] rounded-t-full" />
-              )}
-            </button>
-          );
-        })}
+      {/* Filter tabs + Create button */}
+      <div className="flex items-center justify-between mb-6 border-b border-[var(--border)]">
+        <div className="flex items-center gap-1">
+          {tabs.map((tab) => {
+            const count = filterSubjects(sorted, tab.key).length;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveFilter(tab.key)}
+                className={`
+                  px-4 py-2.5 text-sm font-medium transition-all duration-200 relative
+                  ${
+                    activeFilter === tab.key
+                      ? "text-[var(--text)]"
+                      : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
+                  }
+                `}
+              >
+                {tab.label}
+                <span className="ml-1.5 text-[11px] font-mono text-[var(--text-dim)]">
+                  {count}
+                </span>
+                {activeFilter === tab.key && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--accent)] rounded-t-full" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 mb-1 rounded-lg text-sm font-medium
+            bg-[var(--accent)] text-[var(--bg)] hover:bg-[var(--accent-hover)]
+            transition-all duration-200"
+        >
+          <Plus size={16} />
+          Nueva
+        </button>
       </div>
 
       {/* Grid */}
@@ -72,8 +87,20 @@ export default function SubjectsList({ subjects }: SubjectsListProps) {
           <p className="text-sm text-[var(--text-dim)]">
             No hay materias con este filtro.
           </p>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="mt-3 text-sm text-[var(--accent)] hover:underline"
+          >
+            Crear tu primera materia
+          </button>
         </div>
       )}
+
+      {/* Create modal */}
+      <CreateSubjectModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+      />
     </>
   );
 }
